@@ -58,6 +58,9 @@ public class AuthService {
             user.setRealName("用户" + studentNo); // placeholder
             user.setNickname(generateUniqueNickname());
             user.setAvatarUrl("/avatars/default.png");
+            user.setGrade("空");
+            user.setCollege("空");
+            user.setAcademy("空");
             user.setCreditScore(platformConfig.getCredit().getInitialScore());
             user.setAccountStatus(UserStatus.NORMAL);
             user.setRole(AccountRole.USER);
@@ -75,10 +78,19 @@ public class AuthService {
             pointAccountRepository.save(account);
         }
 
+        // Fetch point account to populate DTO fields
+        PointAccount pointAccount = pointAccountRepository.findByUserId(user.getId())
+                .orElse(new PointAccount(user.getId(), 0, 0, 0, 0, null));
+
         String token = jwtUtils.generateToken(user.getId(), user.getStudentNo(), user.getRole().name());
         LoginResponse response = new LoginResponse();
         response.setToken(token);
-        response.setUser(toUserInfoDTO(user));
+        UserInfoDTO userInfo = toUserInfoDTO(user);
+        userInfo.setAvailablePoints(pointAccount.getAvailablePoints());
+        userInfo.setFrozenPoints(pointAccount.getFrozenPoints());
+        userInfo.setTotalIncome(pointAccount.getTotalIncome());
+        userInfo.setTotalExpense(pointAccount.getTotalExpense());
+        response.setUser(userInfo);
         return response;
     }
 
@@ -117,10 +129,10 @@ public class AuthService {
         dto.setRealName(user.getRealName());
         dto.setNickname(user.getNickname());
         dto.setAvatarUrl(user.getAvatarUrl());
-        dto.setAnnouncement(user.getAnnouncement());
-        dto.setGrade(user.getGrade());
-        dto.setCollege(user.getCollege());
-        dto.setAcademy(user.getAcademy());
+        dto.setAnnouncement(user.getAnnouncement() != null ? user.getAnnouncement() : "");
+        dto.setGrade(user.getGrade() != null ? user.getGrade() : "空");
+        dto.setCollege(user.getCollege() != null ? user.getCollege() : "空");
+        dto.setAcademy(user.getAcademy() != null ? user.getAcademy() : "空");
         dto.setCreditScore(user.getCreditScore());
         dto.setAccountStatus(user.getAccountStatus().name());
         dto.setRole(user.getRole().name());
